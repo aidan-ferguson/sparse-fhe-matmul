@@ -7,6 +7,9 @@
 
 namespace SparseFHE {
 
+
+/// @brief Structure which contains SEAL objects that are public, that is they can be
+///        shared without exposing sensitive information.
 struct SealCKKSRuntimeContext {
 public:
     std::shared_ptr<seal::Encryptor>    encryptor;
@@ -21,6 +24,8 @@ public:
 };
 
 
+/// @brief Structure which contains SEAL objects that are private, this object should not be
+///        shared out-with the client.
 struct SealCKKSSecretContext {
 public:
     std::shared_ptr<seal::Decryptor>   decryptor;
@@ -30,12 +35,16 @@ public:
     SealCKKSSecretContext() = default;
 };
 
+
+/// @brief Struture which stores the entire SEAL CKKS context used for encryption, matrix multiplication and decryption
 struct SealCKKSContext {
     public:
         std::shared_ptr<seal::SEALContext> context;
         SealCKKSSecretContext secret;
         SealCKKSRuntimeContext runtime;
 
+    /// @brief Construct a SEAL CKKS context with a specified polynomial modulus degree
+    /// @param poly_modulus_degree The polynomial modulus degree to use for the CKKS context
     SealCKKSContext(size_t poly_modulus_degree);
 };
 
