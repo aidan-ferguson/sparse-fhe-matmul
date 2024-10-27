@@ -6,7 +6,7 @@
 
 namespace SparseFHE {
 
-/// @brief Class that allows for encrypted homomorphic naive sparse matrix multiplication
+/// @brief Class that allows for encrypted homomorphic CSR sparse matrix multiplication
 class SparseCSRFHE : SparseBase<SparseCSRFHE> {
 public:
 
@@ -56,10 +56,10 @@ protected:
     uint64_t get_csr_index(const SparseCSRFHE& csr, uint64_t row, uint64_t col) const;
     
     /// @brief Vector to store column indices of encrypted values 
-    std::vector<uint64_t> _col_index;
+    std::vector<uint64_t> _col_indices;
     
     /// @brief Vector to store row indices of encrypted values
-    std::vector<uint64_t> _row_index;
+    std::vector<uint64_t> _row_indices;
 
 };
 

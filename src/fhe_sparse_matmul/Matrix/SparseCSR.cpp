@@ -14,10 +14,10 @@ SparseCSRFHE::SparseCSRFHE(uint64_t rows, uint64_t cols, uint64_t chunk_size, co
     std::vector<double> nzv;
 
     // Populate CSR metadata vectors that indicate position of elements
-    this->_row_index.reserve(rows + 1);
+    this->_row_indices.reserve(rows + 1);
     for(uint64_t row_idx = 0; row_idx < rows; row_idx++)
     {
-        this->_row_index.push_back(nzv.size());
+        this->_row_indices.push_back(nzv.size());
         for(uint64_t col_idx = 0; col_idx < cols; col_idx++)
         {
             // Store value, col idx and row idx for all non-zero values
@@ -25,11 +25,11 @@ SparseCSRFHE::SparseCSRFHE(uint64_t rows, uint64_t cols, uint64_t chunk_size, co
             if (doubles_close(v, 0.0) == false)
             {
                 nzv.push_back(v);
-                this->_col_index.push_back(col_idx);
+                this->_col_indices.push_back(col_idx);
             }
         }
     }
-    this->_row_index.push_back(nzv.size());
+    this->_row_indices.push_back(nzv.size());
 
     // Encode & Encrypt all required matrices
     size_t slot_count = context.ckks_encoder->slot_count();
@@ -41,45 +41,59 @@ SparseCSRFHE::SparseCSRFHE(uint64_t rows, uint64_t cols, uint64_t chunk_size, co
 
 void SparseCSRFHE::compute_result_metadata(const SparseCSRFHE& rhs, SparseCSRFHE& result) const
 {
+    std::vector<bool> occupancy(result.rows()*result.cols(), false);
     for (uint64_t A_row = 0; A_row < result.rows(); A_row++)
     {
-        result._row_index.push_back(result._col_index.size());
-
         // Select the indices that represent this row in the LHS encrypted values vector
-        uint64_t A_row_start = this->_row_index.at(A_row);
-        uint64_t A_row_end = this->_row_index.at(A_row + 1);
+        uint64_t A_row_start = this->_row_indices.at(A_row);
+        uint64_t A_row_end = this->_row_indices.at(A_row + 1);
 
         for(uint64_t A_data_idx = A_row_start; A_data_idx < A_row_end; A_data_idx++)
         {
             // Get the column index of the current selected element in A
-            uint64_t A_col = this->_col_index.at(A_data_idx);
+            uint64_t A_col = this->_col_indices.at(A_data_idx);
 
             // Select the indices that represent this row in the RHS encrypted values vector
-            uint64_t B_row_start = rhs._row_index.at(A_col);
-            uint64_t B_row_end = rhs._row_index.at(A_col + 1);
+            uint64_t B_row_start = rhs._row_indices.at(A_col);
+            uint64_t B_row_end = rhs._row_indices.at(A_col + 1);
 
             for(uint64_t B_data_idx = B_row_start; B_data_idx < B_row_end; B_data_idx++)
             {
                 // Get the column of this value in RHS
-                uint64_t B_col = rhs._col_index.at(B_data_idx);
-                result._col_index.push_back(B_col);
+                uint64_t B_col = rhs._col_indices.at(B_data_idx);
+                uint64_t R_idx = ((A_row*result.cols()) + B_col);
+                occupancy.at(R_idx) = true;
             }
         }
     }
-    result._row_index.push_back(result._col_index.size());
+
+    // Create CSR metadata
+    result._row_indices.reserve(result.rows() + 1);
+    for(uint64_t row_idx = 0; row_idx < result.rows(); row_idx++)
+    {
+        result._row_indices.push_back(result._col_indices.size());
+        for(uint64_t col_idx = 0; col_idx < result.cols(); col_idx++)
+        {
+            if (occupancy.at((row_idx * result.cols()) + col_idx) == true)
+            {
+                result._col_indices.push_back(col_idx);
+            }
+        }
+    }
+    result._row_indices.push_back(result._col_indices.size());
 }
 
 
 uint64_t SparseCSRFHE::get_csr_index(const SparseCSRFHE& csr, uint64_t row, uint64_t col) const
 {
     // Get the start of the row by referring to row index array
-    uint64_t row_start = csr._row_index.at(row);
-    uint64_t row_end   = csr._row_index.at(row + 1);
+    uint64_t row_start = csr._row_indices.at(row);
+    uint64_t row_end   = csr._row_indices.at(row + 1);
 
     // Search from start of row to end for column
     for (uint64_t col_idx = row_start; col_idx < row_end; col_idx++)
     {
-        if (csr._col_index.at(col_idx) == col)
+        if (csr._col_indices.at(col_idx) == col)
         {
             return col_idx;
         }
@@ -95,6 +109,8 @@ uint64_t SparseCSRFHE::get_csr_index(const SparseCSRFHE& csr, uint64_t row, uint
 // TODO: standardise formatting, here we have 'SparseCSRFHE &rhs'. Just install extension and auto-format
 SparseCSRFHE SparseCSRFHE::fhe_matmul(const SparseCSRFHE &rhs, const SealCKKSRuntimeContext &context, uint64_t n_threads) const
 {
+    // TODO: assertions for sizes
+
     // Define intermediate ciphertexts used during computation
     seal::Ciphertext enc_zeros = encrypted_zeros(context);
     seal::Ciphertext enc_slot_zero_mask = encrypted_slot_zero_mask(context);
@@ -104,7 +120,7 @@ SparseCSRFHE SparseCSRFHE::fhe_matmul(const SparseCSRFHE &rhs, const SealCKKSRun
     SparseCSRFHE result(this->rows(), rhs.cols(), this->_chunk_size);
     this->compute_result_metadata(rhs, result);
 
-    size_t n_result_chunks = std::ceil(static_cast<double>(result._col_index.size())/static_cast<double>(this->_chunk_size));
+    size_t n_result_chunks = std::ceil(static_cast<double>(result._col_indices.size())/static_cast<double>(this->_chunk_size));
     result._enc_mat = std::vector<seal::Ciphertext>(n_result_chunks, enc_zeros);
 
     std::vector<std::mutex> result_chunks_mutex(n_result_chunks);
@@ -113,17 +129,17 @@ SparseCSRFHE SparseCSRFHE::fhe_matmul(const SparseCSRFHE &rhs, const SealCKKSRun
     for (uint64_t A_row = 0; A_row < this->_rows; A_row++)
     {
         // Select the indices that represent this row in the LHS encrypted values vector
-        uint64_t A_row_start = this->_row_index.at(A_row);
-        uint64_t A_row_end = this->_row_index.at(A_row + 1);
+        uint64_t A_row_start = this->_row_indices.at(A_row);
+        uint64_t A_row_end = this->_row_indices.at(A_row + 1);
 
         for(uint64_t A_data_idx = A_row_start; A_data_idx < A_row_end; A_data_idx++)
         {
             // Get the column index of the current selected element in A
-            uint64_t A_col = this->_col_index.at(A_data_idx);
+            uint64_t A_col = this->_col_indices.at(A_data_idx);
 
             // Select the indices that represent this row in the RHS encrypted values vector
-            uint64_t B_row_start = rhs._row_index.at(A_col);
-            uint64_t B_row_end = rhs._row_index.at(A_col + 1);
+            uint64_t B_row_start = rhs._row_indices.at(A_col);
+            uint64_t B_row_end = rhs._row_indices.at(A_col + 1);
 
             // Wait on required thread_idx joining back to main
             size_t thread_idx = ((A_row*this->_cols) + A_col) % n_threads;
@@ -138,8 +154,8 @@ SparseCSRFHE SparseCSRFHE::fhe_matmul(const SparseCSRFHE &rhs, const SealCKKSRun
                     for(uint64_t B_data_idx = B_row_start; B_data_idx < B_row_end; B_data_idx++)
                     {
                         // Get the column of this value in RHS
-                        uint64_t B_col = rhs._col_index.at(B_data_idx);
-                        uint64_t R_idx = get_csr_index(result, A_row, B_col);
+                        uint64_t B_col = rhs._col_indices.at(B_data_idx);
+                        uint64_t R_idx = this->get_csr_index(result, A_row, B_col);
 
                         // Determine which chunk and where in the chunk we need to access for both operands
                         size_t selected_a_chunk = A_data_idx / this->_chunk_size;
@@ -219,11 +235,11 @@ void SparseCSRFHE::decrypt(const SealCKKSSecretContext &context, double *const o
             uint64_t value_idx = (chunk * this->_chunk_size) + elem;
 
             // Recover row and column
-            uint64_t col = this->_col_index.at(value_idx);
+            uint64_t col = this->_col_indices.at(value_idx);
             uint64_t row = std::numeric_limits<uint64_t>::max();
-            for (size_t row_idx = 0; row_idx < this->_row_index.size() - 1; row_idx++)
+            for (size_t row_idx = 0; row_idx < this->_row_indices.size() - 1; row_idx++)
             {
-                if ((this->_row_index.at(row_idx) <= value_idx) && (this->_row_index.at(row_idx + 1) > value_idx))
+                if ((this->_row_indices.at(row_idx) <= value_idx) && (this->_row_indices.at(row_idx + 1) > value_idx))
                 {
                     row = row_idx;
                     break;
@@ -239,7 +255,7 @@ void SparseCSRFHE::decrypt(const SealCKKSSecretContext &context, double *const o
 double SparseCSRFHE::sparsity() const
 {
     // Number of entries in `col_index` array over the size of the matrix, as it is parallel to values array
-    return static_cast<double>(this->_col_index.size()) / static_cast<double>(this->rows() * this->cols()); 
+    return static_cast<double>(this->_col_indices.size()) / static_cast<double>(this->rows() * this->cols()); 
 }
 
 }; // namespace SparseFHE

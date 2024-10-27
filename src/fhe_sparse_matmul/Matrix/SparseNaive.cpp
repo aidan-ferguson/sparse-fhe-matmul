@@ -48,7 +48,10 @@ void SparseNaiveFHE::decrypt(const SealCKKSSecretContext& context, double* const
         // Place the chunk values into the output array
         for (uint64_t elem = 0; elem < chunk_size_limit; elem++)
         {
-            output[(chunk * this->_chunk_size) + elem] = result_values.at(elem);
+            if (this->_is_zero.get()[(chunk * this->_chunk_size) + elem] == false)
+            {
+                output[(chunk * this->_chunk_size) + elem] = result_values.at(elem);
+            }
         }
     }
 }
