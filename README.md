@@ -1,16 +1,22 @@
 # Sparse Fully Homomorphic Encryption (FHE) Matrix Multiplication
 
+## Introduction
+
+This repository is an accessible open-source implementation of an upcoming paper submission, it will be updated accordingly when the submission is complete.
+
+Our implementation wraps the [Microsoft SEAL](https://github.com/microsoft/SEAL) FHE library and exposes a user friendly C++ API for performing multi-threaded matrix multiplication on matrices with arbitrary levels of unstructured sparsity.
+
+A [mini-tutorial](./examples/simple/main.cpp) is available in our `examples/` folder, it provides a walk-through of the available API functionality.
+
+Python bindings may be added in the future.
+
+
 ## Installation Instructions
-
-This will walk you through installing the library in your system.
-
-
-
 ### Installing Microsoft Seal
 
 This library depends on the Microsoft SEAL project. Installation instructions can be found within the README of their [repository](https://github.com/microsoft/SEAL?tab=readme-ov-file#building-microsoft-seal-manually).
 
-Microsoft SEAL 4.1.1 is required for this project. Other versions may work but compatibility is not guaranteed.
+Microsoft SEAL 4.1.1 is required for this project. Other versions may work but compatibility is not guaranteed and you will have to change the version requirements in `CMakeLists.txt`.
 
 ### Building the Library
 

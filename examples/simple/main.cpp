@@ -18,7 +18,6 @@ typedef SparseFHE::SparseCSRFHE SparseSchemeFHE;
 
 int main(int argc, char** argv)
 {
-    
     /*
     *   Initialise the Microsoft SEAL context, if you have an existing context in your program
     *   please manually construct a SparseFHE::SealCKKSContext object.
