@@ -1,14 +1,14 @@
 #include <fhe_sparse_matmul/Matrix/SparseCSR.hpp>
 #include <fhe_sparse_matmul/utils.hpp>
-#include <assert.h>
+#include <cassert>
 
 namespace SparseFHE {
 
 SparseCSRFHE::SparseCSRFHE(uint64_t rows, uint64_t cols, uint64_t chunk_size, const double *const data, SealCKKSRuntimeContext &context)
 {
-    this->_rows = rows;
-    this->_cols = cols;
-    this->_chunk_size = chunk_size;
+    this->_rows = rows; this->_cols = cols; this->_chunk_size = chunk_size;
+    size_t slot_count = context.ckks_encoder->slot_count();
+    assert(chunk_size <= slot_count);
 
     // Temporary non-zero values vector, not stored in encrypted structure
     std::vector<double> nzv;
@@ -32,9 +32,7 @@ SparseCSRFHE::SparseCSRFHE(uint64_t rows, uint64_t cols, uint64_t chunk_size, co
     this->_row_indices.push_back(nzv.size());
 
     // Encode & Encrypt all required matrices
-    size_t slot_count = context.ckks_encoder->slot_count();
-    assert(chunk_size <= slot_count);
-    std::vector<std::vector<double>> mat_v = chunk_values(nzv, chunk_size, slot_count);
+    const auto mat_v = chunk_values(nzv, chunk_size, slot_count);
     this->_enc_mat = encrypt_values(mat_v, context);
 }
 

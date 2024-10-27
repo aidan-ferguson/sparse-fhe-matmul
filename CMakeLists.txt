@@ -6,8 +6,6 @@ set(VERSION_MAJOR 1)
 set(VERSION_MINOR 0)
 set(VERSION_PATCH 0)
 
-# TODO: enforece -Wextra and -Wall before release
-
 # Require SEAL install
 find_package(SEAL 4.1.1 REQUIRED)
 
@@ -24,24 +22,31 @@ file(GLOB SRC
 )
 
 # Target and include
-add_library(SparseFHEMatmul SHARED ${SRC})
+add_library(${CMAKE_PROJECT_NAME} SHARED ${SRC})
 
-target_include_directories(SparseFHEMatmul
+# Set compiler flags for warnings
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE -Wpedantic -Wall -Wextra -Werror)
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE /W4)  # /W4 is roughly equivalent to -Wall -Wextra
+endif()
+
+target_include_directories(${CMAKE_PROJECT_NAME}
     PUBLIC 
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
 )
 
-set_target_properties(SparseFHEMatmul PROPERTIES
+set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES
     VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}
     SOVERSION ${VERSION_MAJOR}
 )
 
 # Link SEAL 
-target_link_libraries(SparseFHEMatmul PUBLIC SEAL::seal)
+target_link_libraries(${CMAKE_PROJECT_NAME} PUBLIC SEAL::seal)
 
 # Install stuff
-install(TARGETS SparseFHEMatmul
+install(TARGETS ${CMAKE_PROJECT_NAME}
     EXPORT SparseFHEMatmulTargets
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib

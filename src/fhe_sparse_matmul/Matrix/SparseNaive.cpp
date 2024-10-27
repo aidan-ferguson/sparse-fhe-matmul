@@ -1,6 +1,6 @@
 #include <fhe_sparse_matmul/Matrix/SparseNaive.hpp>
 #include <fhe_sparse_matmul/utils.hpp>
-#include <assert.h>
+#include <cassert>
 
 namespace SparseFHE {
 
@@ -8,6 +8,8 @@ namespace SparseFHE {
 SparseNaiveFHE::SparseNaiveFHE(uint64_t rows, uint64_t cols, uint64_t chunk_size, const double* const data, SealCKKSRuntimeContext& context)
 {
     this->_rows=rows; this->_cols=cols; this->_chunk_size = chunk_size;
+    size_t slot_count = context.ckks_encoder->slot_count();
+    assert(chunk_size <= slot_count);
 
     // Populate metadata array that indicates zero positions
     this->_is_zero = std::vector<bool>(rows*cols);
@@ -17,11 +19,8 @@ SparseNaiveFHE::SparseNaiveFHE(uint64_t rows, uint64_t cols, uint64_t chunk_size
     }
 
     // Encode & Encrypt all required matrices
-    size_t slot_count = context.ckks_encoder->slot_count();
-    assert(chunk_size <= slot_count);
-    std::vector<double> mat_values;
-    mat_values.assign(data, data + (this->rows() * this->cols()));
-    std::vector<std::vector<double>> mat_v = chunk_values(mat_values, chunk_size, slot_count);
+    std::vector<double> mat_values(data, data + (this->rows() * this->cols()));
+    const auto mat_v = chunk_values(mat_values, chunk_size, slot_count);
     this->_enc_mat = encrypt_values(mat_v, context);
 }
 

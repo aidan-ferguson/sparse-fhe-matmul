@@ -4,7 +4,7 @@
 namespace SparseFHE {
 
 
-std::vector<std::vector<double>> chunk_values(std::vector<double> V, uint64_t chunk_sz, uint64_t slot_count)
+std::vector<std::vector<double>> chunk_values(const std::vector<double>& V, uint64_t chunk_sz, uint64_t slot_count)
 {
     // To accommodate the matrix values within the ciphertext, we 'chuck' them into different ciphertexts
     std::vector<std::vector<double>> result;
@@ -29,7 +29,7 @@ std::vector<std::vector<double>> chunk_values(std::vector<double> V, uint64_t ch
 }
 
 
-std::vector<seal::Ciphertext> encrypt_values(std::vector<std::vector<double>>& values, const SealCKKSRuntimeContext& context)
+std::vector<seal::Ciphertext> encrypt_values(const std::vector<std::vector<double>>& values, const SealCKKSRuntimeContext& context)
 {
     std::vector<seal::Ciphertext> encrypted;
     for (auto& v : values)

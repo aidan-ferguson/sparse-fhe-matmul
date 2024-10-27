@@ -49,7 +49,7 @@ struct SealCKKSContext {
 };
 
 
-};
+}; // namespace SparseFHE
 
 
 #endif // __SPARSE_FHE_MATMUL__SEAL_CKKS_CONTEXT_HPP

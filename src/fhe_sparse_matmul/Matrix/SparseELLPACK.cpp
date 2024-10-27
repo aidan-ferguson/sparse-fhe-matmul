@@ -1,14 +1,14 @@
 #include <fhe_sparse_matmul/Matrix/SparseELLPACK.hpp>
 #include <fhe_sparse_matmul/utils.hpp>
-#include <assert.h>
+#include <cassert>
 
 namespace SparseFHE {
 
 SparseELLPACKFHE::SparseELLPACKFHE(uint64_t rows, uint64_t cols, uint64_t chunk_size, const double* const data, SealCKKSRuntimeContext& context)
 {
-    this->_rows = rows;
-    this->_cols = cols;
-    this->_chunk_size = chunk_size;
+    this->_rows = rows; this->_cols = cols; this->_chunk_size = chunk_size;
+    size_t slot_count = context.ckks_encoder->slot_count();
+    assert(chunk_size <= slot_count);
 
     // Determine non-zero values so we can allocate values and indices array
     this->_row_nzv.resize(this->rows());
@@ -48,9 +48,7 @@ SparseELLPACKFHE::SparseELLPACKFHE(uint64_t rows, uint64_t cols, uint64_t chunk_
     }
 
     // Now encrypt values and store
-    size_t slot_count = context.ckks_encoder->slot_count();
-    assert(chunk_size <= slot_count);
-    std::vector<std::vector<double>> mat_v = chunk_values(values, chunk_size, slot_count);
+    const auto mat_v = chunk_values(values, chunk_size, slot_count);
     this->_enc_mat = encrypt_values(mat_v, context);
 }
 
@@ -71,16 +69,13 @@ void SparseELLPACKFHE::compute_result_metadata(const SparseELLPACKFHE& rhs, Spar
 
             for (uint64_t B_nzv_idx = 0; B_nzv_idx < rhs._max_nzv; B_nzv_idx++)
             {
-                uint64_t A_idx = (A_row*this->_max_nzv) + A_nzv_idx;
-                uint64_t A_col = this->_col_indices.at(A_row).at(A_nzv_idx);
-
                 // Stop if we have reached end of valid entries for this row
+                uint64_t A_col = this->_col_indices.at(A_row).at(A_nzv_idx);
                 if (B_nzv_idx >= rhs._row_nzv.at(A_col))
                 {
                     break;
                 }
 
-                uint64_t B_idx = (A_col*rhs._max_nzv) + B_nzv_idx;
                 uint64_t B_col = rhs._col_indices.at(A_col).at(B_nzv_idx);
                 uint64_t R_idx = ((A_row*result.cols()) + B_col);
 

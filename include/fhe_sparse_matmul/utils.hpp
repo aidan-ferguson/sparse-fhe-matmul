@@ -16,13 +16,13 @@ namespace SparseFHE {
 /// @param chunk_sz The number of values per chunk
 /// @param slot_count The number of slots in the CKKS encoder
 /// @return An array of vectors padded to `slot_count` size and containing `chunk_sz` values
-std::vector<std::vector<double>> chunk_values(std::vector<double> V, uint64_t chunk_sz, uint64_t slot_count);
+std::vector<std::vector<double>> chunk_values(const std::vector<double>& V, uint64_t chunk_sz, uint64_t slot_count);
 
 /// @brief Encrypt an array of chunks using an established CKKS runtime context
 /// @param values The array of chunks representing the matrix to encrypt. Vectors must have length equal to the slot count of the CKKS encoder
 /// @param context The public runtime CKKS context, used to encrypt the values 
 /// @return An array of encrypted Ciphertext objects
-std::vector<seal::Ciphertext> encrypt_values(std::vector<std::vector<double>>& values, const SealCKKSRuntimeContext& context);
+std::vector<seal::Ciphertext> encrypt_values(const std::vector<std::vector<double>>& values, const SealCKKSRuntimeContext& context);
 
 /// @brief Generate an encrypted set of zero values, typically used for initialisation of ciphertexts
 /// @param context The public runtime CKKS context, used to encrypt the values  
@@ -52,8 +52,6 @@ inline bool doubles_close(double a, double b, double epsilon = 1e-9) noexcept
 {
     return std::fabs(a - b) <= epsilon;
 }
-
-// TODO: apply keywords in applicable places like above
 
 }; // namespace SparseFHE
 
