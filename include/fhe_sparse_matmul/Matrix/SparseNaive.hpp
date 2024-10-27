@@ -14,7 +14,7 @@ public:
     /// @param rows Number of rows in the matrix
     /// @param cols Number of columns in the matrix
     /// @param chunk_size Chunk size of the encrypted matrix
-    SparseNaiveFHE(uint64_t rows, uint64_t cols, uint64_t chunk_size) {this->_rows=rows; this->_cols=cols; this->_chunk_size=chunk_size; this->_is_zero = std::shared_ptr<uint8_t>(new uint8_t[rows*cols]); };
+    SparseNaiveFHE(uint64_t rows, uint64_t cols, uint64_t chunk_size) {this->_rows=rows; this->_cols=cols; this->_chunk_size=chunk_size; this->_is_zero = std::vector<bool>(rows*cols, true); };
     
     /// @brief Create an encrypted SparseNaiveFHE object initialised with some matrix data
     /// @param rows Number of rows in the matrix
@@ -44,7 +44,7 @@ protected:
 
     /// @brief Parallel matrix that indicates if the corresponding entry in the encrypted matrix is zero
     ///        we expose some information about the strucure of the matrix here.
-    std::shared_ptr<uint8_t> _is_zero;
+    std::vector<bool> _is_zero;
 };
 
 };

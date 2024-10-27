@@ -10,10 +10,10 @@ SparseNaiveFHE::SparseNaiveFHE(uint64_t rows, uint64_t cols, uint64_t chunk_size
     this->_rows=rows; this->_cols=cols; this->_chunk_size = chunk_size;
 
     // Populate metadata array that indicates zero positions
-    this->_is_zero = std::shared_ptr<uint8_t>(new uint8_t[rows*cols]);
+    this->_is_zero = std::vector<bool>(rows*cols);
     for(uint32_t p = 0; p < this->_rows * this->_cols; p++)
     {
-        this->_is_zero.get()[p] = (data[p] == 0);
+        this->_is_zero.at(p) = (data[p] == 0);
     }
 
     // Encode & Encrypt all required matrices
@@ -48,7 +48,7 @@ void SparseNaiveFHE::decrypt(const SealCKKSSecretContext& context, double* const
         // Place the chunk values into the output array
         for (uint64_t elem = 0; elem < chunk_size_limit; elem++)
         {
-            if (this->_is_zero.get()[(chunk * this->_chunk_size) + elem] == false)
+            if (this->_is_zero.at((chunk * this->_chunk_size) + elem) == false)
             {
                 output[(chunk * this->_chunk_size) + elem] = result_values.at(elem);
             }
@@ -71,7 +71,7 @@ SparseNaiveFHE SparseNaiveFHE::fhe_matmul(const SparseNaiveFHE& rhs, const SealC
     std::vector<std::mutex> result_chunks_mutex(n_result_chunks);
     std::vector<std::shared_ptr<std::thread>> threads(n_threads);
 
-    for (uint64_t A_row = 0; A_row < this->_rows; A_row++)
+    for (uint64_t A_row = 0; A_row < this->rows(); A_row++)
     {
         for (uint64_t B_col = 0; B_col < rhs.cols(); B_col++)
         {
@@ -87,11 +87,12 @@ SparseNaiveFHE SparseNaiveFHE::fhe_matmul(const SparseNaiveFHE& rhs, const SealC
                     {
                         uint64_t A_idx = (A_row*this->cols()) + data_idx;
                         uint64_t B_idx = (data_idx*rhs.cols()) + B_col;
-                        uint64_t R_idx = ((A_row*rhs.cols()) + B_col);
+                        uint64_t R_idx = ((A_row*result.cols()) + B_col);
 
-                        if ((this->_is_zero.get()[A_idx] != true) && 
-                            (rhs._is_zero.get()[B_idx] != true))
+                        if ((this->_is_zero.at(A_idx) != true) && 
+                            (rhs._is_zero.at(B_idx) != true))
                         {
+
                             // Determine which chunk and where in the chunk we need to access for both operands
                             size_t selected_A_chunk = A_idx / this->_chunk_size;
                             size_t selected_B_chunk = B_idx / rhs._chunk_size;
@@ -125,7 +126,7 @@ SparseNaiveFHE SparseNaiveFHE::fhe_matmul(const SparseNaiveFHE& rhs, const SealC
                             result._enc_mat.at(selected_R_chunk).scale() = enc_rot_a.scale();
                             context.evaluator->add_inplace(result._enc_mat.at(selected_R_chunk), enc_rot_a);
                             
-                            result._is_zero.get()[(A_row*result.cols()) + B_col] = false;
+                            result._is_zero.at(R_idx) = false;
                         }
                     }
                 })
@@ -151,7 +152,7 @@ double SparseNaiveFHE::sparsity() const
     uint64_t nzv = 0;
     for(uint64_t p = 0; p < rows()*cols(); p++)
     {
-        if (this->_is_zero.get()[p] == false)
+        if (this->_is_zero.at(p) == false)
         {
             nzv++;
         }
