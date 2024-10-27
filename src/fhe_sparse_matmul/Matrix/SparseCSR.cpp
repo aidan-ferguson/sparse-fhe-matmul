@@ -41,6 +41,7 @@ SparseCSRFHE::SparseCSRFHE(uint64_t rows, uint64_t cols, uint64_t chunk_size, co
 
 void SparseCSRFHE::compute_result_metadata(const SparseCSRFHE& rhs, SparseCSRFHE& result) const
 {
+    // Matrix to hold occupancy data for the result i.e. where will there be result values
     std::vector<bool> occupancy(result.rows()*result.cols(), false);
     for (uint64_t A_row = 0; A_row < result.rows(); A_row++)
     {
