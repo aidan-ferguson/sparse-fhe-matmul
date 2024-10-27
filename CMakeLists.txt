@@ -6,6 +6,8 @@ set(VERSION_MAJOR 1)
 set(VERSION_MINOR 0)
 set(VERSION_PATCH 0)
 
+# TODO: enforece -Wextra and -Wall before release
+
 # Require SEAL install
 find_package(SEAL 4.1.1 REQUIRED)
 

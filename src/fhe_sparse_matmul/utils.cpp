@@ -45,4 +45,30 @@ std::vector<seal::Ciphertext> encrypt_values(std::vector<std::vector<double>>& v
 }
 
 
+seal::Ciphertext encrypted_zeros(const SealCKKSRuntimeContext &context)
+{
+    seal::Ciphertext enc_zeros;
+    
+    std::vector<double> zeros(context.ckks_encoder->slot_count(), 0);
+    seal::Plaintext plain_zeros;
+    context.ckks_encoder->encode(zeros, context.scale, plain_zeros);
+    context.encryptor->encrypt(plain_zeros, enc_zeros);
+
+    return enc_zeros;
+}
+
+
+seal::Ciphertext encrypted_slot_zero_mask(const SealCKKSRuntimeContext& context)
+{
+    seal::Ciphertext enc_slot_zero_mask;
+
+    seal::Plaintext plain_slot_zero_mask;
+    std::vector<double> index_zero_mask(context.ckks_encoder->slot_count(), 0);
+    index_zero_mask.at(0) = 1;
+    context.ckks_encoder->encode(index_zero_mask, context.scale, plain_slot_zero_mask);
+    context.encryptor->encrypt(plain_slot_zero_mask, enc_slot_zero_mask);
+
+    return enc_slot_zero_mask;
+}
+
 }; // namespace SparseFHE

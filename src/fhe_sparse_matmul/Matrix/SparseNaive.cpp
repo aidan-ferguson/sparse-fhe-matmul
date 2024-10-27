@@ -28,11 +28,7 @@ SparseNaiveFHE::SparseNaiveFHE(uint64_t rows, uint64_t cols, uint64_t chunk_size
 
 void SparseNaiveFHE::decrypt(const SealCKKSSecretContext& context, double* const output) const
 {
-    // First zero all elements in output matrix
-    for (uint64_t idx = 0; idx < (cols() * rows()); idx++)
-    {
-        output[idx] = 0.0;
-    }
+    zero_matrix(output, this->rows()*this->cols());
 
     size_t chunk_overflow = (cols() * rows()) % this->_chunk_size;
     for (uint64_t chunk = 0; chunk < this->_enc_mat.size(); chunk++)
@@ -60,25 +56,14 @@ void SparseNaiveFHE::decrypt(const SealCKKSSecretContext& context, double* const
 
 SparseNaiveFHE SparseNaiveFHE::fhe_matmul(const SparseNaiveFHE& rhs, const SealCKKSRuntimeContext& context, uint64_t n_threads) const
 {
-    // Define intermediate ciphertexts and encode accumulator with zeros
-    seal::Ciphertext enc_zeros;
-    std::vector<double> zeros(context.ckks_encoder->slot_count(), 0);
-    seal::Plaintext plain_zeros;
-    context.ckks_encoder->encode(zeros, context.scale, plain_zeros);
-    context.encryptor->encrypt(plain_zeros, enc_zeros);
+    // Define intermediate ciphertexts used during computation
+    seal::Ciphertext enc_zeros = encrypted_zeros(context);
+    seal::Ciphertext enc_slot_zero_mask = encrypted_slot_zero_mask(context);
 
     // We want to store our results in different chunks, allows us to multithread more efficiently
     SparseNaiveFHE result(this->rows(), rhs.cols(), this->_chunk_size);
     size_t n_result_chunks = std::ceil(static_cast<double>(result.rows()*result.cols())/static_cast<double>(this->_chunk_size));
-    std::vector<seal::Ciphertext> result_chunks(n_result_chunks, enc_zeros);
-
-    // Create mask for slot zero
-    seal::Ciphertext enc_index_zero_mask;
-    seal::Plaintext plain_index_zero_mask;
-    std::vector<double> index_zero_mask(context.ckks_encoder->slot_count(), 0);
-    index_zero_mask.at(0) = 1;
-    context.ckks_encoder->encode(index_zero_mask, context.scale, plain_index_zero_mask);
-    context.encryptor->encrypt(plain_index_zero_mask, enc_index_zero_mask);
+    result._enc_mat = std::vector<seal::Ciphertext>(n_result_chunks, enc_zeros);
 
     std::vector<std::mutex> result_chunks_mutex(n_result_chunks);
     std::vector<std::shared_ptr<std::thread>> threads(n_threads);
@@ -123,7 +108,7 @@ SparseNaiveFHE SparseNaiveFHE::fhe_matmul(const SparseNaiveFHE& rhs, const SealC
                             context.evaluator->rescale_to_next_inplace(enc_rot_a);
                             
                             // Mask out slot zero by multiplying with mask
-                            context.evaluator->mod_switch_to(enc_index_zero_mask, enc_rot_a.parms_id(), enc_rot_b);
+                            context.evaluator->mod_switch_to(enc_slot_zero_mask, enc_rot_a.parms_id(), enc_rot_b);
                             context.evaluator->multiply_inplace(enc_rot_a, enc_rot_b);
                             context.evaluator->relinearize_inplace(enc_rot_a, *context.relin_keys);
                             context.evaluator->rescale_to_next_inplace(enc_rot_a);
@@ -133,9 +118,9 @@ SparseNaiveFHE SparseNaiveFHE::fhe_matmul(const SparseNaiveFHE& rhs, const SealC
 
                             // Critical section, we lock the chunk we want to modify and add to result chunk
                             std::lock_guard<std::mutex> chunk_lock(result_chunks_mutex.at(selected_R_chunk));
-                            context.evaluator->mod_switch_to_inplace(result_chunks.at(selected_R_chunk), enc_rot_a.parms_id());
-                            result_chunks.at(selected_R_chunk).scale() = enc_rot_a.scale();
-                            context.evaluator->add_inplace(result_chunks.at(selected_R_chunk), enc_rot_a);
+                            context.evaluator->mod_switch_to_inplace(result._enc_mat.at(selected_R_chunk), enc_rot_a.parms_id());
+                            result._enc_mat.at(selected_R_chunk).scale() = enc_rot_a.scale();
+                            context.evaluator->add_inplace(result._enc_mat.at(selected_R_chunk), enc_rot_a);
                             
                             result._is_zero.get()[(A_row*result.cols()) + B_col] = false;
                         }
@@ -153,14 +138,13 @@ SparseNaiveFHE SparseNaiveFHE::fhe_matmul(const SparseNaiveFHE& rhs, const SealC
         }
     }
 
-    result._enc_mat = result_chunks;
-
     return result;
 }
 
 
 double SparseNaiveFHE::sparsity() const
 {
+    // Equal to number of non-zero entries in `is_zero` array
     uint64_t nzv = 0;
     for(uint64_t p = 0; p < rows()*cols(); p++)
     {

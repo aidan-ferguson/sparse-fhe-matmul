@@ -25,9 +25,6 @@ protected:
 
     /// @brief Stores the encrypted value chunks
     std::vector<seal::Ciphertext> _enc_mat;
-
-    /// @brief Stores how much each chunk has been rotated
-    std::vector<uint64_t> _chunk_rotations;
 };
 
 

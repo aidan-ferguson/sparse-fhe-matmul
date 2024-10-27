@@ -20,9 +20,40 @@ std::vector<std::vector<double>> chunk_values(std::vector<double> V, uint64_t ch
 
 /// @brief Encrypt an array of chunks using an established CKKS runtime context
 /// @param values The array of chunks representing the matrix to encrypt. Vectors must have length equal to the slot count of the CKKS encoder
-/// @param context The public runtime CKKS context used to encrypt the values 
+/// @param context The public runtime CKKS context, used to encrypt the values 
 /// @return An array of encrypted Ciphertext objects
 std::vector<seal::Ciphertext> encrypt_values(std::vector<std::vector<double>>& values, const SealCKKSRuntimeContext& context);
+
+/// @brief Generate an encrypted set of zero values, typically used for initialisation of ciphertexts
+/// @param context The public runtime CKKS context, used to encrypt the values  
+/// @return A ciphertext containing '0.0' in all slots
+seal::Ciphertext encrypted_zeros(const SealCKKSRuntimeContext &context);
+
+/// @brief Generate a ciphertext with all slots set to zero, except slot 0. This is used for 'masking' slot 0 by multiplying
+/// @param context The public runtime CKKS context, used to encrypt the values  
+/// @return A ciphertext containing '0.0' in all slots, except slot 0 which will contain '1.0'
+seal::Ciphertext encrypted_slot_zero_mask(const SealCKKSRuntimeContext& context);
+
+/// @brief Zero all elements in input matrix 
+/// @param m pointer to matrix to be modified
+/// @param sz number of elements in matrix
+inline void zero_matrix(double* m, uint64_t sz) noexcept
+{
+    for (uint64_t idx = 0; idx < sz; idx++)
+        m[idx] = 0.0;
+}
+
+/// @brief Verify if two double precision floating point numbers are within some threshold (i.e. equal)
+/// @param a left hand operand
+/// @param b right hand operand
+/// @param epsilon threshold in difference between a and b
+/// @return true if |a-b| < epsilon, false otherwise
+inline bool doubles_close(double a, double b, double epsilon = 1e-9) noexcept
+{
+    return std::fabs(a - b) <= epsilon;
+}
+
+// TODO: apply keywords in applicable places like above
 
 }; // namespace SparseFHE
 
