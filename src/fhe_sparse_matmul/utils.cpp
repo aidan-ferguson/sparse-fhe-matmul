@@ -8,8 +8,8 @@ std::vector<std::vector<double>> chunk_values(const std::vector<double>& V, uint
 {
     // To accommodate the matrix values within the ciphertext, we 'chuck' them into different ciphertexts
     std::vector<std::vector<double>> result;
-    size_t n_mat_a_chunks = std::ceil(static_cast<double>(V.size()) / chunk_sz);
-    for (size_t chunk_idx = 0; chunk_idx < n_mat_a_chunks; chunk_idx++)
+    uint64_t n_mat_a_chunks = std::ceil(static_cast<double>(V.size()) / chunk_sz);
+    for (uint64_t chunk_idx = 0; chunk_idx < n_mat_a_chunks; chunk_idx++)
     {
         auto chunk_start = V.begin() + (chunk_sz * chunk_idx);
         auto chunk_end = V.begin() + std::min((chunk_sz * (chunk_idx + 1)), V.size());
@@ -45,7 +45,7 @@ std::vector<seal::Ciphertext> encrypt_values(const std::vector<std::vector<doubl
 }
 
 
-seal::Ciphertext encrypted_zeros(const SealCKKSRuntimeContext &context)
+seal::Ciphertext encrypted_zeros(const SealCKKSRuntimeContext& context)
 {
     seal::Ciphertext enc_zeros;
     

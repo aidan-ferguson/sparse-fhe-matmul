@@ -125,6 +125,8 @@ uint64_t SparseELLPACKFHE::get_ellpack_index(const SparseELLPACKFHE& ellpack, ui
 
 SparseELLPACKFHE SparseELLPACKFHE::fhe_matmul(const SparseELLPACKFHE& rhs, const SealCKKSRuntimeContext& context, uint64_t n_threads) const
 {
+    assert(this->cols() == rhs.rows());
+
     // Define intermediate ciphertexts used during computation
     seal::Ciphertext enc_zeros = encrypted_zeros(context);
     seal::Ciphertext enc_slot_zero_mask = encrypted_slot_zero_mask(context);
@@ -133,7 +135,7 @@ SparseELLPACKFHE SparseELLPACKFHE::fhe_matmul(const SparseELLPACKFHE& rhs, const
     SparseELLPACKFHE result(this->rows(), rhs.cols(), this->_chunk_size);
     this->compute_result_metadata(rhs, result);
 
-    size_t n_result_chunks = std::ceil(static_cast<double>(result._col_indices.size() * result._max_nzv)/static_cast<double>(this->_chunk_size));
+    uint64_t n_result_chunks = std::ceil(static_cast<double>(result._col_indices.size() * result._max_nzv)/static_cast<double>(this->_chunk_size));
     result._enc_mat = std::vector<seal::Ciphertext>(n_result_chunks, enc_zeros);
 
     std::vector<std::mutex> result_chunks_mutex(n_result_chunks);
@@ -150,7 +152,7 @@ SparseELLPACKFHE SparseELLPACKFHE::fhe_matmul(const SparseELLPACKFHE& rhs, const
             }
 
             // Wait for thread to become available
-            size_t thread_idx = ((A_row*this->_max_nzv) + A_nzv_idx) % n_threads;
+            uint64_t thread_idx = ((A_row*this->_max_nzv) + A_nzv_idx) % n_threads;
             if ((threads.at(thread_idx) != nullptr) && (threads.at(thread_idx)->joinable()))
             {
                 threads.at(thread_idx)->join();
@@ -177,12 +179,12 @@ SparseELLPACKFHE SparseELLPACKFHE::fhe_matmul(const SparseELLPACKFHE& rhs, const
                         uint64_t R_idx = this->get_ellpack_index(result, A_row, B_col);
 
                         // Determine which chunk and where in the chunk we need to access for both operands
-                        size_t selected_A_chunk = A_idx / this->_chunk_size;
-                        size_t A_data_offset = A_idx % this->_chunk_size;
-                        size_t selected_B_chunk = B_idx / rhs._chunk_size;
-                        size_t B_data_offset = B_idx % rhs._chunk_size;
-                        size_t selected_R_chunk = R_idx / result._chunk_size;
-                        size_t R_data_offset = R_idx % result._chunk_size;
+                        uint64_t selected_A_chunk = A_idx / this->_chunk_size;
+                        uint64_t A_data_offset = A_idx % this->_chunk_size;
+                        uint64_t selected_B_chunk = B_idx / rhs._chunk_size;
+                        uint64_t B_data_offset = B_idx % rhs._chunk_size;
+                        uint64_t selected_R_chunk = R_idx / result._chunk_size;
+                        uint64_t R_data_offset = R_idx % result._chunk_size;
 
                         
                         seal::Ciphertext enc_rot_a, enc_rot_b;
@@ -217,7 +219,7 @@ SparseELLPACKFHE SparseELLPACKFHE::fhe_matmul(const SparseELLPACKFHE& rhs, const
     }
 
     // Wait for all row threads to join 
-    for (size_t idx = 0; idx < n_threads; idx++) {
+    for (uint64_t idx = 0; idx < n_threads; idx++) {
         if ((threads.at(idx) != nullptr) && (threads.at(idx)->joinable()))
         {
             threads.at(idx)->join();
@@ -234,7 +236,7 @@ void SparseELLPACKFHE::decrypt(const SealCKKSSecretContext& context, double* con
     zero_matrix(output, this->rows()*this->cols());
 
     // Chunk overflow is how much of the last chunk is occupied with values
-    size_t chunk_overflow = (this->rows() * this->cols()) % this->_chunk_size;
+    uint64_t chunk_overflow = (this->rows() * this->cols()) % this->_chunk_size;
     for (uint64_t chunk = 0; chunk < this->_enc_mat.size(); chunk++)
     { 
         seal::Plaintext plain_result;
@@ -243,7 +245,7 @@ void SparseELLPACKFHE::decrypt(const SealCKKSSecretContext& context, double* con
         context.ckks_encoder->decode(plain_result, result_values);
 
         // When the matrix does not fit perfectly into chunks, we need to only iterate part-way through
-        size_t chunk_size_limit = this->_chunk_size;
+        uint64_t chunk_size_limit = this->_chunk_size;
         if ((chunk == (this->_enc_mat.size() - 1)) && (chunk_overflow != 0)) {
             chunk_size_limit = chunk_overflow;
         }

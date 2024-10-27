@@ -27,7 +27,7 @@ std::vector<seal::Ciphertext> encrypt_values(const std::vector<std::vector<doubl
 /// @brief Generate an encrypted set of zero values, typically used for initialisation of ciphertexts
 /// @param context The public runtime CKKS context, used to encrypt the values  
 /// @return A ciphertext containing '0.0' in all slots
-seal::Ciphertext encrypted_zeros(const SealCKKSRuntimeContext &context);
+seal::Ciphertext encrypted_zeros(const SealCKKSRuntimeContext& context);
 
 /// @brief Generate a ciphertext with all slots set to zero, except slot 0. This is used for 'masking' slot 0 by multiplying
 /// @param context The public runtime CKKS context, used to encrypt the values  
