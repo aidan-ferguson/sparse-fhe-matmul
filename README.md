@@ -44,3 +44,17 @@ cmake --build build
 
 You should see output from the program verifying that the encrypted matrix operations are working. You are now ready to use this in your own programs!
 A template `CMakeLists.txt` can be found in the `example/` directory.
+
+## Citing Sparse FHE MatMul
+
+If you use our work in academic papers, please use the following BibTeX entry for citations.
+
+```
+@misc{sparsefhematmul,
+    title = {Sparse FHE MatMul},
+    howpublished = {\url{https://github.com/aidan-ferguson/sparse-fhe-matmul}},
+    month = oct,
+    year = 2024,
+    author={Aidan Ferguson}
+}
+```
