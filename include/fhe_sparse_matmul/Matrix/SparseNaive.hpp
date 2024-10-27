@@ -7,7 +7,7 @@
 namespace SparseFHE {
 
 /// @brief Class that allows for encrypted homomorphic naive sparse matrix multiplication
-class SparseNaiveFHE : SparseBase<SparseNaiveFHE> {
+class SparseNaiveFHE : public SparseBase<SparseNaiveFHE> {
 public:
 
     /// @brief Create an encrypted empty SparseNaiveFHE object without any data

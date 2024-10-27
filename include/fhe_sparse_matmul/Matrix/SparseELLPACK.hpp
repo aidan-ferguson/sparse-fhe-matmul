@@ -7,7 +7,7 @@
 namespace SparseFHE {
 
 /// @brief Class that allows for encrypted homomorphic ELLPACK sparse matrix multiplication
-class SparseELLPACKFHE : SparseBase<SparseELLPACKFHE> {
+class SparseELLPACKFHE : public SparseBase<SparseELLPACKFHE> {
 public:
 
     /// @brief Create an encrypted empty SparseELLPACKFHE object without any data

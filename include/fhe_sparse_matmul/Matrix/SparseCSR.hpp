@@ -7,7 +7,7 @@
 namespace SparseFHE {
 
 /// @brief Class that allows for encrypted homomorphic CSR sparse matrix multiplication
-class SparseCSRFHE : SparseBase<SparseCSRFHE> {
+class SparseCSRFHE : public SparseBase<SparseCSRFHE> {
 public:
 
     /// @brief Create an encrypted empty SparseCSRFHE object without any data
