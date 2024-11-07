@@ -14,6 +14,7 @@ struct SealCKKSRuntimeContext {
 public:
     std::shared_ptr<seal::SEALContext> context;
     std::shared_ptr<seal::EncryptionParameters> params;
+    std::shared_ptr<seal::PublicKey>    public_key;
     std::shared_ptr<seal::Encryptor>    encryptor;
     std::shared_ptr<seal::Evaluator>    evaluator;
     std::shared_ptr<seal::RelinKeys>    relin_keys;
@@ -23,6 +24,10 @@ public:
 
     // Attributes are set by SealCKKSContext
     SealCKKSRuntimeContext() = default;
+    SealCKKSRuntimeContext(std::stringstream& stream) {this->deserialize(stream);}
+
+    void serialize(std::stringstream& stream) const;
+    void deserialize(std::stringstream& stream);
 };
 
 
