@@ -52,10 +52,6 @@ int main(int argc, char** argv)
     SparseSchemeFHE lhs_fhe(3, 3, 1, lhs, fhe_context.runtime);
     SparseSchemeFHE rhs_fhe(3, 3, 1, rhs, fhe_context.runtime);
 
-    std::stringstream test;
-    lhs_fhe.serialize(test);
-    SparseSchemeFHE recon(test, fhe_context.runtime);
-
     /*
     *   Now, actually perform the multiplication. The statement can be read right to left as in notation
     *   so the statement a.fhe_matmul(b, ...) corresponds to A \dot B.
@@ -63,7 +59,7 @@ int main(int argc, char** argv)
     *   Note that the number of threads is passed as the last parameter, here we use 9 as one thread per
     *   element allows for up to 9 threads.
     */
-    SparseSchemeFHE dot_fhe = recon.fhe_matmul(rhs_fhe, fhe_context.runtime, 9);
+    SparseSchemeFHE dot_fhe = lhs_fhe.fhe_matmul(rhs_fhe, fhe_context.runtime, 9);
 
     /*
     *   Here we decrypt the matrix just computed in encrypted space.
