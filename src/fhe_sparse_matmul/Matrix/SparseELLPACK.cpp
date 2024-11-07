@@ -278,4 +278,47 @@ double SparseELLPACKFHE::sparsity() const
 }
 
 
+void SparseELLPACKFHE::serialize(std::stringstream& stream) const
+{
+    SparseBase::serialize(stream);
+    // Store the length of col indices, then for each row, store the length followed by contents
+    size_t sz = this->_col_indices.size();
+    stream.write(reinterpret_cast<const char*>(&sz), sizeof(size_t));
+    for (auto& row : this->_col_indices)
+    {
+        sz = row.size();
+        stream.write(reinterpret_cast<const char*>(&sz), sizeof(size_t));
+        stream.write(reinterpret_cast<const char*>(row.data()), row.size() * sizeof(uint64_t));
+    }
+    // Now, row nzv
+    sz = this->_row_nzv.size();
+    stream.write(reinterpret_cast<const char*>(&sz), sizeof(size_t));
+    stream.write(reinterpret_cast<const char*>(this->_row_nzv.data()), this->_row_nzv.size() * sizeof(uint64_t));
+    // Finally, max NZV
+    stream.write(reinterpret_cast<const char*>(&this->_max_nzv), sizeof(uint64_t));
+}
+
+
+void SparseELLPACKFHE::deserialize(std::stringstream& stream, const SealCKKSRuntimeContext& context)
+{
+    SparseBase::deserialize(stream, context);
+
+    size_t sz;
+    stream.read(reinterpret_cast<char*>(&sz), sizeof(size_t));
+    this->_col_indices.resize(sz);
+    for (size_t idx = 0; idx < this->_col_indices.size(); idx++)
+    {
+        stream.read(reinterpret_cast<char*>(&sz), sizeof(size_t));
+
+        this->_col_indices.at(idx).resize(sz);
+        stream.read(reinterpret_cast<char*>(this->_col_indices.at(idx).data()), sz * sizeof(uint64_t));
+    }
+    stream.read(reinterpret_cast<char*>(&sz), sizeof(size_t));
+
+    this->_row_nzv.resize(sz);
+    stream.read(reinterpret_cast<char*>(this->_row_nzv.data()), sz * sizeof(uint64_t));
+    stream.read(reinterpret_cast<char*>(&this->_max_nzv), sizeof(uint64_t));
+}
+
+
 }; // namespace SparseFHE

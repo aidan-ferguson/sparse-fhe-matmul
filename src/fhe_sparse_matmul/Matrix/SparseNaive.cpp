@@ -12,7 +12,7 @@ SparseNaiveFHE::SparseNaiveFHE(uint64_t rows, uint64_t cols, uint64_t chunk_size
     assert(chunk_size <= slot_count);
 
     // Populate metadata array that indicates zero positions
-    this->_is_zero = std::vector<bool>(rows*cols);
+    this->_is_zero = std::vector<uint8_t>(rows*cols);
     for(uint32_t p = 0; p < this->_rows * this->_cols; p++)
     {
         this->_is_zero.at(p) = (data[p] == 0);
@@ -161,5 +161,26 @@ double SparseNaiveFHE::sparsity() const
 
     return static_cast<double>(nzv)/static_cast<double>(rows()*cols());
 }
+
+
+void SparseNaiveFHE::serialize(std::stringstream& stream) const
+{
+    SparseBase::serialize(stream);
+    size_t sz = this->_is_zero.size();
+    stream.write(reinterpret_cast<const char*>(&sz), sizeof(size_t));
+    stream.write(reinterpret_cast<const char*>(this->_is_zero.data()), this->_is_zero.size() * sizeof(uint8_t));
+}
+
+
+void SparseNaiveFHE::deserialize(std::stringstream& stream, const SealCKKSRuntimeContext& context)
+{
+    SparseBase::deserialize(stream, context);
+    size_t sz;
+    stream.read(reinterpret_cast<char*>(&sz), sizeof(size_t));
+    
+    this->_is_zero.resize(sz);
+    stream.read(reinterpret_cast<char*>(this->_is_zero.data()), this->_is_zero.size() * sizeof(uint8_t));
+}
+
 
 }; // namespace SparseFHE

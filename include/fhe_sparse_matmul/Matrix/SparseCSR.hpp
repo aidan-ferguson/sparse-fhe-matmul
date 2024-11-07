@@ -24,6 +24,11 @@ public:
     /// @param context Public SEAL CKKS context
     SparseCSRFHE(uint64_t rows, uint64_t cols, uint64_t chunk_size, const double* const data, SealCKKSRuntimeContext& context);
 
+    /// @brief 
+    /// @param stream 
+    /// @param context 
+    SparseCSRFHE(std::stringstream& stream, SealCKKSRuntimeContext& context) {this->deserialize(stream, context);}
+
     /// @brief Perform matrix multiplication on two SparseCSRFHE objects
     /// @param rhs Right-hand side matrix
     /// @param context Public SEAL CKKS context
@@ -39,6 +44,14 @@ public:
     /// @brief Determine the sparsity of the encrypted matrix
     /// @return Sparsity of the encrypted matrix
     double sparsity() const override;
+
+    /// @brief 
+    /// @param stream 
+    void serialize(std::stringstream& stream) const override;
+
+    /// @brief 
+    /// @param stream 
+    void deserialize(std::stringstream& stream, const SealCKKSRuntimeContext& context) override;
 
 protected:
 

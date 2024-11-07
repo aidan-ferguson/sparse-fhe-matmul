@@ -25,13 +25,19 @@ file(GLOB SRC
 
 # Target and include
 # If we want to build python bindings
+add_library(${CMAKE_PROJECT_NAME} SHARED ${SRC})
+
 if (PYTHON_BINDINGS)
     set(PYBIND11_FINDPYTHON ON)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
     find_package(pybind11 CONFIG REQUIRED)
-    pybind11_add_module(${CMAKE_PROJECT_NAME} SHARED ${SRC})
+
+    include_directories(${Python3_INCLUDE_DIRS})
+    link_directories(${Python3_LIBRARY_DIRS})
+    
+    pybind11_add_module(pybind11_module ${SRC} ${PROJECT_SOURCE_DIR}/src/pybind11.cpp)
     add_compile_definitions(BUILD_PYTHON_BINDINGS)
-else()
-    add_library(${CMAKE_PROJECT_NAME} SHARED ${SRC})
+    target_link_libraries(pybind11_module PRIVATE ${CMAKE_PROJECT_NAME})
 endif()
 
 # Set compiler flags for warnings
@@ -63,6 +69,9 @@ install(TARGETS ${CMAKE_PROJECT_NAME}
     RUNTIME DESTINATION bin
     INCLUDES DESTINATION include
 )
+if (PYTHON_BINDINGS)
+    install(TARGETS pybind11_module DESTINATION lib)
+endif()
 install(DIRECTORY include/ DESTINATION include)
 install(EXPORT ${CMAKE_PROJECT_NAME}Targets
     FILE ${CMAKE_PROJECT_NAME}Targets.cmake

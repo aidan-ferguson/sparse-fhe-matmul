@@ -12,6 +12,8 @@ namespace SparseFHE {
 ///        shared without exposing sensitive information.
 struct SealCKKSRuntimeContext {
 public:
+    std::shared_ptr<seal::SEALContext> context;
+    std::shared_ptr<seal::EncryptionParameters> params;
     std::shared_ptr<seal::Encryptor>    encryptor;
     std::shared_ptr<seal::Evaluator>    evaluator;
     std::shared_ptr<seal::RelinKeys>    relin_keys;
@@ -39,7 +41,6 @@ public:
 /// @brief Struture which stores the entire SEAL CKKS context used for encryption, matrix multiplication and decryption
 struct SealCKKSContext {
     public:
-        std::shared_ptr<seal::SEALContext> context;
         SealCKKSSecretContext secret;
         SealCKKSRuntimeContext runtime;
 

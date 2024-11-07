@@ -255,4 +255,30 @@ double SparseCSRFHE::sparsity() const
     return static_cast<double>(this->_col_indices.size()) / static_cast<double>(this->rows() * this->cols()); 
 }
 
+
+void SparseCSRFHE::serialize(std::stringstream& stream) const
+{
+    SparseBase::serialize(stream);
+    size_t col_sz = this->_col_indices.size();
+    size_t row_sz = this->_row_indices.size();
+    stream.write(reinterpret_cast<const char*>(&col_sz), sizeof(size_t));
+    stream.write(reinterpret_cast<const char*>(&row_sz), sizeof(size_t));
+    stream.write(reinterpret_cast<const char*>(this->_col_indices.data()), this->_col_indices.size() * sizeof(uint64_t));
+    stream.write(reinterpret_cast<const char*>(this->_row_indices.data()), this->_row_indices.size() * sizeof(uint64_t));
+}
+
+
+void SparseCSRFHE::deserialize(std::stringstream& stream, const SealCKKSRuntimeContext& context)
+{
+    SparseBase::deserialize(stream, context);
+    size_t col_sz, row_sz;
+    stream.read(reinterpret_cast<char*>(&col_sz), sizeof(size_t));
+    stream.read(reinterpret_cast<char*>(&row_sz), sizeof(size_t));
+    this->_col_indices.resize(col_sz);
+    this->_row_indices.resize(row_sz);
+    
+    stream.read(reinterpret_cast<char*>(this->_col_indices.data()), col_sz * sizeof(uint64_t));
+    stream.read(reinterpret_cast<char*>(this->_row_indices.data()), row_sz * sizeof(uint64_t));
+}
+
 }; // namespace SparseFHE

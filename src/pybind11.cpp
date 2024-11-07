@@ -1,4 +1,5 @@
 #ifdef BUILD_PYTHON_BINDINGS
+#define PYTHON_MODULE_NAME fhe_sparse_matmul
 
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
@@ -9,8 +10,6 @@ namespace py = pybind11;
 #include <fhe_sparse_matmul/Matrix/SparseCSR.hpp>
 #include <fhe_sparse_matmul/Matrix/SparseELLPACK.hpp>
 namespace fhe = SparseFHE;
-
-#define PYTHON_MODULE_NAME fhe_sparse_matmul
 
 
 /// @brief Wrapper for initialising a sparse scheme with matrix data
@@ -46,7 +45,6 @@ py::array_t<double> sparse_decrypt_wrap(scheme& self, const fhe::SealCKKSSecretC
 
 
 PYBIND11_MODULE(PYTHON_MODULE_NAME, m) {
-
     py::class_<fhe::SealCKKSSecretContext>(m, "SealCKKSSecretContext");
     py::class_<fhe::SealCKKSRuntimeContext>(m, "SealCKKSRuntimeContext");
 
