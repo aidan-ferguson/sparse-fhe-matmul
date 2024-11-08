@@ -1,8 +1,8 @@
 import sys
 from pathlib import Path
-sys.path.append(str(Path(__file__).parent.parent.parent / "build"))
+sys.path.append(str(Path(__file__).parent.parent.parent.parent / "build"))
 
-from fhe_sparse_matmul import SealCKKSContext, SparseNaiveFHE, SparseCSRFHE, SparseELLPACKFHE
+from pyfhe_sparse_matmul import SealCKKSContext, SparseNaiveFHE, SparseCSRFHE, SparseELLPACKFHE
 import numpy as np
 
 a = np.array([

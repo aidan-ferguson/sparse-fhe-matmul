@@ -1,5 +1,5 @@
 #ifdef BUILD_PYTHON_BINDINGS
-#define PYTHON_MODULE_NAME fhe_sparse_matmul
+#define PYTHON_MODULE_NAME pyfhe_sparse_matmul
 
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
@@ -44,9 +44,43 @@ py::array_t<double> sparse_decrypt_wrap(scheme& self, const fhe::SealCKKSSecretC
 }
 
 
+/// @brief Wrapper for deserializing an object from a buffer
+/// @tparam T Object type to be deserialized
+/// @param buffer Buffer to deserialize into object
+/// @return Instance of T generated from buffer data
+template<typename T>
+std::unique_ptr<T> deserialize_wrap(py::bytes& buffer)
+{
+    std::string char_buf = buffer; 
+    std::stringstream ss(char_buf);
+    return std::make_unique<T>(ss);
+}
+template<typename T>
+std::unique_ptr<T> deserialize_wrap_scheme(py::bytes& buffer, fhe::SealCKKSRuntimeContext& context)
+{
+    std::string char_buf = buffer; 
+    std::stringstream ss(char_buf);
+    return std::make_unique<T>(ss, context);
+}
+
+
+/// @brief Wrapper for serializing an object into a buffer
+/// @tparam T Object type to be serialized
+/// @return Byte buffer containing object serialized data
+template<typename T>
+py::bytes serialize_wrap(T& self)
+{
+    std::stringstream ss;
+    self.serialize(ss);
+    return py::bytes(ss.str());
+}
+
+
 PYBIND11_MODULE(PYTHON_MODULE_NAME, m) {
     py::class_<fhe::SealCKKSSecretContext>(m, "SealCKKSSecretContext");
-    py::class_<fhe::SealCKKSRuntimeContext>(m, "SealCKKSRuntimeContext");
+    py::class_<fhe::SealCKKSRuntimeContext>(m, "SealCKKSRuntimeContext")
+        .def(py::init(&deserialize_wrap<fhe::SealCKKSRuntimeContext>))
+        .def("serialize", &serialize_wrap<fhe::SealCKKSRuntimeContext>);
 
     py::class_<fhe::SealCKKSContext>(m, "SealCKKSContext")
         .def(py::init<const size_t>())
@@ -56,23 +90,29 @@ PYBIND11_MODULE(PYTHON_MODULE_NAME, m) {
     py::class_<fhe::SparseNaiveFHE>(m, "SparseNaiveFHE")
         .def(py::init<const uint64_t, const uint64_t, const uint64_t>())
         .def(py::init(&sparse_init_wrap<fhe::SparseNaiveFHE>))
+        .def(py::init(&deserialize_wrap_scheme<fhe::SparseNaiveFHE>))
         .def("fhe_matmul", &fhe::SparseNaiveFHE::fhe_matmul)
         .def("decrypt", &sparse_decrypt_wrap<fhe::SparseNaiveFHE>)
-        .def("sparsity", &fhe::SparseNaiveFHE::sparsity);
+        .def("sparsity", &fhe::SparseNaiveFHE::sparsity)
+        .def("serialize", &serialize_wrap<fhe::SparseNaiveFHE>);
 
     py::class_<fhe::SparseCSRFHE>(m, "SparseCSRFHE")
         .def(py::init<const uint64_t, const uint64_t, const uint64_t>())
         .def(py::init(&sparse_init_wrap<fhe::SparseCSRFHE>))
+        .def(py::init(&deserialize_wrap_scheme<fhe::SparseCSRFHE>))
         .def("fhe_matmul", &fhe::SparseCSRFHE::fhe_matmul)
         .def("decrypt", &sparse_decrypt_wrap<fhe::SparseCSRFHE>)
-        .def("sparsity", &fhe::SparseCSRFHE::sparsity);
+        .def("sparsity", &fhe::SparseCSRFHE::sparsity)
+        .def("serialize", &serialize_wrap<fhe::SparseCSRFHE>);
 
     py::class_<fhe::SparseELLPACKFHE>(m, "SparseELLPACKFHE")
         .def(py::init<const uint64_t, const uint64_t, const uint64_t>())
         .def(py::init(&sparse_init_wrap<fhe::SparseELLPACKFHE>))
+        .def(py::init(&deserialize_wrap_scheme<fhe::SparseELLPACKFHE>))
         .def("fhe_matmul", &fhe::SparseELLPACKFHE::fhe_matmul)
         .def("decrypt", &sparse_decrypt_wrap<fhe::SparseELLPACKFHE>)
-        .def("sparsity", &fhe::SparseELLPACKFHE::sparsity);
+        .def("sparsity", &fhe::SparseELLPACKFHE::sparsity)
+        .def("serialize", &serialize_wrap<fhe::SparseELLPACKFHE>);
 }
 
 #endif // ifdef BUILD_PYTHON_BINDINGS

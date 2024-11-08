@@ -35,9 +35,9 @@ if (PYTHON_BINDINGS)
     include_directories(${Python3_INCLUDE_DIRS})
     link_directories(${Python3_LIBRARY_DIRS})
     
-    pybind11_add_module(pybind11_module ${SRC} ${PROJECT_SOURCE_DIR}/src/pybind11.cpp)
+    pybind11_add_module(py${CMAKE_PROJECT_NAME} ${SRC} ${PROJECT_SOURCE_DIR}/src/pybind11.cpp)
     add_compile_definitions(BUILD_PYTHON_BINDINGS)
-    target_link_libraries(pybind11_module PRIVATE ${CMAKE_PROJECT_NAME})
+    target_link_libraries(py${CMAKE_PROJECT_NAME} PRIVATE ${CMAKE_PROJECT_NAME})
 endif()
 
 # Set compiler flags for warnings
@@ -70,7 +70,7 @@ install(TARGETS ${CMAKE_PROJECT_NAME}
     INCLUDES DESTINATION include
 )
 if (PYTHON_BINDINGS)
-    install(TARGETS pybind11_module DESTINATION lib)
+    install(TARGETS py${CMAKE_PROJECT_NAME} DESTINATION lib)
 endif()
 install(DIRECTORY include/ DESTINATION include)
 install(EXPORT ${CMAKE_PROJECT_NAME}Targets
