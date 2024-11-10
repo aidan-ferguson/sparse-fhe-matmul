@@ -99,7 +99,6 @@ def connect_server(ip, port):
                 enc_fc2_activation = SparseCSRFHE(recv_bytes(sock), fhe_context.runtime)
             fc2_activation = enc_fc2_activation.decrypt(fhe_context.secret)
 
-            print(fc2_activation)
             print(f"- Server securely predicted '{np.argmax(fc2_activation)}' using homomorphic encryption sparse matmul.")
 
 
