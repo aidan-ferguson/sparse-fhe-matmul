@@ -12,8 +12,8 @@ BATCH_SIZE = 64
 class MNISTNetwork(nn.Module):
     def __init__(self):
         super(MNISTNetwork, self).__init__()
-        self.fc1 = nn.Linear(28*28, 128)
-        self.fc2 = nn.Linear(128, 10)
+        self.fc1 = nn.Linear(28*28, 128, bias=False)
+        self.fc2 = nn.Linear(128, 10, bias=False)
 
     def forward(self, x):
         x = self.fc1(x)
@@ -215,10 +215,13 @@ def load_network(save_path):
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.7)
 
     # Run for a static 5 epochs, this seems to yield a decent accuracy for our simple network
-    with Halo(text='Training neural network as checkpoint not found on disk', spinner='dots'):
+    epochs = 5
+    gen_str = lambda epoch: f'Training neural network as checkpoint not found on disk ({epoch+1}/{epochs})'
+    with Halo(text=gen_str(0), spinner='dots') as h:
         for epoch in range(0, 5):
-            train(model, device, train_loader, optimizer, epoch)
+            train(model, device, train_loader, optimizer)
             scheduler.step()
+            h.text = gen_str(epoch)
         loss, accuracy = test(model, device, test_loader)
     print(f"- Model trained with accuracy {accuracy} and loss {loss}")
 
