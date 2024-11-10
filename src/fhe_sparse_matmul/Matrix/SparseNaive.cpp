@@ -166,6 +166,9 @@ double SparseNaiveFHE::sparsity() const
 void SparseNaiveFHE::serialize(std::stringstream& stream) const
 {
     SparseBase::serialize(stream);
+    SparseType scheme_type = SparseType::SPARSE_NAIVE;
+    stream.write(reinterpret_cast<const char*>(&scheme_type), sizeof(SparseType));
+
     size_t sz = this->_is_zero.size();
     stream.write(reinterpret_cast<const char*>(&sz), sizeof(size_t));
     stream.write(reinterpret_cast<const char*>(this->_is_zero.data()), this->_is_zero.size() * sizeof(uint8_t));
@@ -175,6 +178,11 @@ void SparseNaiveFHE::serialize(std::stringstream& stream) const
 void SparseNaiveFHE::deserialize(std::stringstream& stream, const SealCKKSRuntimeContext& context)
 {
     SparseBase::deserialize(stream, context);
+    SparseType scheme_type;
+    stream.read(reinterpret_cast<char*>(&scheme_type), sizeof(SparseType));
+    if (scheme_type != SparseType::SPARSE_NAIVE)
+        throw std::runtime_error("Expected SPARSE_NAIVE type but received another type.");
+
     size_t sz;
     stream.read(reinterpret_cast<char*>(&sz), sizeof(size_t));
     

@@ -259,6 +259,8 @@ double SparseCSRFHE::sparsity() const
 void SparseCSRFHE::serialize(std::stringstream& stream) const
 {
     SparseBase::serialize(stream);
+    SparseType scheme_type = SparseType::SPARSE_CSR;
+    stream.write(reinterpret_cast<const char*>(&scheme_type), sizeof(SparseType));
     size_t col_sz = this->_col_indices.size();
     size_t row_sz = this->_row_indices.size();
     stream.write(reinterpret_cast<const char*>(&col_sz), sizeof(size_t));
@@ -271,6 +273,11 @@ void SparseCSRFHE::serialize(std::stringstream& stream) const
 void SparseCSRFHE::deserialize(std::stringstream& stream, const SealCKKSRuntimeContext& context)
 {
     SparseBase::deserialize(stream, context);
+    SparseType scheme_type;
+    stream.read(reinterpret_cast<char*>(&scheme_type), sizeof(SparseType));
+    if (scheme_type != SparseType::SPARSE_CSR)
+        throw std::runtime_error("Expected SPARSE_CSR type but received another type.");
+
     size_t col_sz, row_sz;
     stream.read(reinterpret_cast<char*>(&col_sz), sizeof(size_t));
     stream.read(reinterpret_cast<char*>(&row_sz), sizeof(size_t));

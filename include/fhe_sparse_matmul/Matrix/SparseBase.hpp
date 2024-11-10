@@ -8,6 +8,11 @@
 
 namespace SparseFHE {
 
+enum class SparseType : uint64_t {
+    SPARSE_NAIVE = 1,
+    SPARSE_CSR = 16,
+    SPARSE_ELLPACK = 32
+};
 
 template <typename DerivedFHE>
 class SparseBase {
@@ -19,6 +24,14 @@ public:
  
     uint64_t rows() const {return _rows;}
     uint64_t cols() const {return _cols;}
+    void square_inplace(SealCKKSRuntimeContext& context) {
+        for (auto& ciphertext : this->_enc_mat)
+        {
+            context.evaluator->square_inplace(ciphertext);
+            context.evaluator->relinearize_inplace(ciphertext, *context.relin_keys);
+            context.evaluator->rescale_to_next_inplace(ciphertext);
+        }
+    }
 
 protected:
     /// @brief 

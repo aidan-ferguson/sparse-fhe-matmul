@@ -281,6 +281,9 @@ double SparseELLPACKFHE::sparsity() const
 void SparseELLPACKFHE::serialize(std::stringstream& stream) const
 {
     SparseBase::serialize(stream);
+    SparseType scheme_type = SparseType::SPARSE_ELLPACK;
+    stream.write(reinterpret_cast<const char*>(&scheme_type), sizeof(SparseType));
+
     // Store the length of col indices, then for each row, store the length followed by contents
     size_t sz = this->_col_indices.size();
     stream.write(reinterpret_cast<const char*>(&sz), sizeof(size_t));
@@ -302,6 +305,10 @@ void SparseELLPACKFHE::serialize(std::stringstream& stream) const
 void SparseELLPACKFHE::deserialize(std::stringstream& stream, const SealCKKSRuntimeContext& context)
 {
     SparseBase::deserialize(stream, context);
+    SparseType scheme_type;
+    stream.read(reinterpret_cast<char*>(&scheme_type), sizeof(SparseType));
+    if (scheme_type != SparseType::SPARSE_ELLPACK)
+        throw std::runtime_error("Expected SPARSE_ELLPACK type but received another type.");
 
     size_t sz;
     stream.read(reinterpret_cast<char*>(&sz), sizeof(size_t));

@@ -75,6 +75,17 @@ py::bytes serialize_wrap(T& self)
     return py::bytes(ss.str());
 }
 
+#define SPARSE_BIND(scheme, name) \
+    py::class_<scheme>(m, name) \
+        .def(py::init<const uint64_t, const uint64_t, const uint64_t>()) \
+        .def(py::init(&sparse_init_wrap<scheme>)) \
+        .def(py::init(&deserialize_wrap_scheme<scheme>)) \
+        .def("fhe_matmul", &scheme::fhe_matmul) \
+        .def("decrypt", &sparse_decrypt_wrap<scheme>) \
+        .def("sparsity", &scheme::sparsity) \
+        .def("square_inplace", [](scheme& self, fhe::SealCKKSRuntimeContext& context) {return self.square_inplace(context);}) \
+        .def("serialize", &serialize_wrap<scheme>) \
+
 
 PYBIND11_MODULE(PYTHON_MODULE_NAME, m) {
     py::class_<fhe::SealCKKSSecretContext>(m, "SealCKKSSecretContext");
@@ -87,32 +98,29 @@ PYBIND11_MODULE(PYTHON_MODULE_NAME, m) {
         .def_readwrite("secret", &fhe::SealCKKSContext::secret)
         .def_readwrite("runtime", &fhe::SealCKKSContext::runtime);
 
-    py::class_<fhe::SparseNaiveFHE>(m, "SparseNaiveFHE")
-        .def(py::init<const uint64_t, const uint64_t, const uint64_t>())
-        .def(py::init(&sparse_init_wrap<fhe::SparseNaiveFHE>))
-        .def(py::init(&deserialize_wrap_scheme<fhe::SparseNaiveFHE>))
-        .def("fhe_matmul", &fhe::SparseNaiveFHE::fhe_matmul)
-        .def("decrypt", &sparse_decrypt_wrap<fhe::SparseNaiveFHE>)
-        .def("sparsity", &fhe::SparseNaiveFHE::sparsity)
-        .def("serialize", &serialize_wrap<fhe::SparseNaiveFHE>);
+    // py::class_<fhe::SparseNaiveFHE>(m, "SparseNaiveFHE")
+    //     .def(py::init<const uint64_t, const uint64_t, const uint64_t>())
+    //     .def(py::init(&sparse_init_wrap<fhe::SparseNaiveFHE>))
+    //     .def(py::init(&deserialize_wrap_scheme<fhe::SparseNaiveFHE>))
+    //     .def("fhe_matmul", &fhe::SparseNaiveFHE::fhe_matmul)
+    //     .def("decrypt", &sparse_decrypt_wrap<fhe::SparseNaiveFHE>)
+    //     .def("sparsity", &fhe::SparseNaiveFHE::sparsity)
+    //     .def("square_inplace", [](fhe::SparseNaiveFHE& self, fhe::SealCKKSRuntimeContext& context) {return self.square_inplace(context);})
+    //     .def("serialize", &serialize_wrap<fhe::SparseNaiveFHE>);
 
-    py::class_<fhe::SparseCSRFHE>(m, "SparseCSRFHE")
-        .def(py::init<const uint64_t, const uint64_t, const uint64_t>())
-        .def(py::init(&sparse_init_wrap<fhe::SparseCSRFHE>))
-        .def(py::init(&deserialize_wrap_scheme<fhe::SparseCSRFHE>))
-        .def("fhe_matmul", &fhe::SparseCSRFHE::fhe_matmul)
-        .def("decrypt", &sparse_decrypt_wrap<fhe::SparseCSRFHE>)
-        .def("sparsity", &fhe::SparseCSRFHE::sparsity)
-        .def("serialize", &serialize_wrap<fhe::SparseCSRFHE>);
-
-    py::class_<fhe::SparseELLPACKFHE>(m, "SparseELLPACKFHE")
-        .def(py::init<const uint64_t, const uint64_t, const uint64_t>())
-        .def(py::init(&sparse_init_wrap<fhe::SparseELLPACKFHE>))
-        .def(py::init(&deserialize_wrap_scheme<fhe::SparseELLPACKFHE>))
-        .def("fhe_matmul", &fhe::SparseELLPACKFHE::fhe_matmul)
-        .def("decrypt", &sparse_decrypt_wrap<fhe::SparseELLPACKFHE>)
-        .def("sparsity", &fhe::SparseELLPACKFHE::sparsity)
-        .def("serialize", &serialize_wrap<fhe::SparseELLPACKFHE>);
+    SPARSE_BIND(fhe::SparseNaiveFHE, "SparseNaiveFHE");
+    SPARSE_BIND(fhe::SparseCSRFHE, "SparseCSRFHE");
+    SPARSE_BIND(fhe::SparseELLPACKFHE, "SparseELLPACKFHE");
+    
+    // py::class_<fhe::SparseELLPACKFHE>(m, "SparseELLPACKFHE")
+    //     .def(py::init<const uint64_t, const uint64_t, const uint64_t>())
+    //     .def(py::init(&sparse_init_wrap<fhe::SparseELLPACKFHE>))
+    //     .def(py::init(&deserialize_wrap_scheme<fhe::SparseELLPACKFHE>))
+    //     .def("fhe_matmul", &fhe::SparseELLPACKFHE::fhe_matmul)
+    //     .def("decrypt", &sparse_decrypt_wrap<fhe::SparseELLPACKFHE>)
+    //     .def("sparsity", &fhe::SparseELLPACKFHE::sparsity)
+    //     .def("square_inplace", [](fhe::SparseELLPACKFHE& self, fhe::SealCKKSRuntimeContext& context) {return self.square_inplace(context);})
+    //     .def("serialize", &serialize_wrap<fhe::SparseELLPACKFHE>);
 }
 
 #endif // ifdef BUILD_PYTHON_BINDINGS
