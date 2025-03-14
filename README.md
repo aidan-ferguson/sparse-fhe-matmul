@@ -78,8 +78,16 @@ A more advanced demo can be found in `examples/python/endtoend`. This demonstrat
 
 ## Citing Sparse FHE MatMul
 
-If you use our work in academic papers, please use the following BibTeX entry for citations.
+If you use our work your academic paper, please use the following BibTeX entry for citations.
 
 ```bibtex
-TBC on paper acceptance
+@misc{ferguson_fhe_sparse_matmul,
+      title={Exploiting Unstructured Sparsity in Fully Homomorphic Encrypted DNNs}, 
+      author={Aidan Ferguson and Perry Gibson and Lara D'Agata and Parker McLeod and Ferhat Yaman and Amitabh Das and Ian Colbert and José Cano},
+      year={2025},
+      eprint={2503.09184},
+      archivePrefix={arXiv},
+      primaryClass={cs.CR},
+      url={https://arxiv.org/abs/2503.09184}, 
+}
 ```
